@@ -1,9 +1,8 @@
 # sushiroller
-### _Your Name <your.name@example.com>_
 
-This is a project to do ... something.
+This is an s-expression to HTML templating engine written in common lisp
 
 ## License
 
-Specify license here
+BSD 3-Clause
 
