@@ -100,12 +100,13 @@
 
 (defun roll (stream subchar &optional arg)
   (declare (ignore subchar arg))
-  (let ((*activated-p* t)
-        (render-forms (map 'list (lambda (item)
-                                   (if (listp item) item `(format *output-stream* "~A" ,item)))
-                           (generate-renderer stream))))
+  (let ((render-forms (let ((*activated-p* t))
+                        (map 'list (lambda (item)
+                                     (if (listp item) item `(format *output-stream* "~A" ,item)))
+                             (generate-renderer stream)))))
     (if *activated-p*
         `(progn ,@render-forms)
-        `(let ((*output-stream* (make-string-output-stream)))
-           ,@render-forms
-           (get-output-stream-string *output-stream*)))))
+        (let ((*activated-p* t))
+          `(let ((*output-stream* (make-string-output-stream)))
+             ,@render-forms
+             (get-output-stream-string *output-stream*))))))
