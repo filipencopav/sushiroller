@@ -100,13 +100,13 @@
 
 (defun roll (stream subchar &optional arg)
   (declare (ignore subchar arg))
-  (let ((render-forms (let ((*activated-p* t))
-                        (map 'list (lambda (item)
-                                     (if (listp item) item `(format *output-stream* "~A" ,item)))
-                             (generate-renderer stream)))))
-    (if *activated-p*
-        `(progn ,@render-forms)
-        (let ((*activated-p* t))
-          `(let ((*output-stream* (make-string-output-stream)))
-             ,@render-forms
-             (get-output-stream-string *output-stream*))))))
+  (rtl:with-gensyms (fun)
+    `(flet ((,fun ()
+              ,@(map 'list
+                 (lambda (item)
+                   (if (listp item) item `(format *output-stream* "~A" ,item)))
+                 (generate-renderer stream))))
+       (if *output-stream*
+           (progn (,fun))
+           (with-output-to-string (*output-stream*)
+             (,fun))))))
