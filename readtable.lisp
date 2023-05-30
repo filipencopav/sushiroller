@@ -1,5 +1,5 @@
 (in-package :sushiroller)
 
 (named-readtables:defreadtable sushiroller:sushiroller
-  (:merge :current)
+  (:merge :standard)
   (:dispatch-macro-char #\# #\@ #'roll))
