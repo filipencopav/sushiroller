@@ -83,6 +83,7 @@
       `(format ,stream-var "~A" ,(code e))))
 
 (defvar *output-stream* nil)
+(defvar *activated-p* nil)
 
 (defun generate-renderer (stream)
   (let ((stack (generate-flat-list (rtl:vec (read-next-sexp stream))))
@@ -99,9 +100,12 @@
 
 (defun roll (stream subchar &optional arg)
   (declare (ignore subchar arg))
-  `(let ((output-stream-bound-p *output-stream*)
-         (*output-stream* (or *output-stream* (make-string-output-stream))))
-     ,@(map 'list (lambda (item) (if (listp item) item `(format *output-stream* "~A" ,item)))
-            (generate-renderer stream))
-     (unless output-stream-bound-p
-       (get-output-stream-string *output-stream*))))
+  (let ((*activated-p* t)
+        (render-forms (map 'list (lambda (item)
+                                   (if (listp item) item `(format *output-stream* "~A" ,item)))
+                           (generate-renderer stream))))
+    (if *activated-p*
+        `(progn ,@render-forms)
+        `(let ((*output-stream* (make-string-output-stream)))
+           ,@render-forms
+           (get-output-stream-string *output-stream*)))))
