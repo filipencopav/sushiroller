@@ -6,6 +6,7 @@
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
-  :depends-on (#:rutils #:defclass-std)
+  :depends-on (#:rutils #:defclass-std #:named-readtables)
   :components ((:file "package")
-               (:file "sushiroller")))
+               (:file "sushiroller")
+               (:file "readtable")))

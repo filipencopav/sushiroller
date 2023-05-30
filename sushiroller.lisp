@@ -56,7 +56,7 @@
 
 (defun generate-flat-list (stack)
   (let ((output-stack (make-array 8 :fill-pointer 0 :adjustable t)))
-    (rtl:dovec (node stack output-stack)
+    (rtl:dovec (node stack)
       (typecase node
         (node
          (pushx (format nil "<~A~@[ class=\"~{~A~^ ~}\"~]"
@@ -72,36 +72,34 @@
            (pushx child output-stack))
          (pushx (format nil "</~A>" (name node)) output-stack))
         (t
-         (pushx node output-stack))))))
+         (pushx node output-stack))))
+    output-stack))
 
 (defmethod executable-rendering-sexp ((e executable) (stream-var symbol))
   (if (manual-printing-p e)
       (code e)
       `(format ,stream-var "~A" ,(code e))))
 
-(defun read-stream (stream)
-  (let ((stack (make-array 8 :fill-pointer 0 :adjustable t)))
-    (rtl:dowhile-let (char (peek-char t stream nil))
-      (pushx (read-next-sexp stream) stack))
-    stack))
+(defvar *output-stream* nil)
 
-(defun generate-renderer (stream-with-sexp output-stream-var)
-  (declare (type (and symbol (not null)) output-stream-var))
-  (let ((stack (generate-flat-list (read-stream stream-with-sexp)))
+(defun generate-renderer (stream)
+  (let ((stack (generate-flat-list (rtl:vec (read-next-sexp stream))))
         (output-expressions (list)))
-    (rtl:dovec (node stack)
+    (rtl:dovec (node stack (nreverse output-expressions))
       (typecase node
-        (executable (push (executable-rendering-sexp node output-stream-var) output-expressions))
+        (executable (push (executable-rendering-sexp node '*output-stream*) output-expressions))
         (string
          (typecase (car output-expressions)
            (string
             (setf (car output-expressions) (concatenate 'string (car output-expressions) node)))
            (list
-            (push node output-expressions))))))
-    (map 'list (lambda (item) (if (listp item) item `(format ,output-stream-var "~A" ,item)))
-         (nreverse output-expressions))))
+            (push node output-expressions))))))))
 
-(defmacro index-template (name lambda-list path &key (output-stream-var t))
-  `(defun ,name ,lambda-list
-     ,@ (with-open-file (stream (eval path))
-          (generate-renderer stream output-stream-var))))
+(defun roll (stream subchar &optional arg)
+  (declare (ignore subchar arg))
+  `(let ((output-stream-bound-p *output-stream*)
+         (*output-stream* (or *output-stream* (make-string-output-stream))))
+     ,@(map 'list (lambda (item) (if (listp item) item `(format *output-stream* "~A" ,item)))
+            (generate-renderer stream))
+     (unless output-stream-bound-p
+       (get-output-stream-string *output-stream*))))
