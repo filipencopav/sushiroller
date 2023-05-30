@@ -3,6 +3,7 @@
 (in-package #:sushiroller)
 
 (defvar *current-line* 0)
+(defvar *void-tags* '(:area :base :br :col :embed :hr :img :link :meta :param :source :track :wbr))
 
 (defclass/std node ()
   ((name :std (make-array 8 :element-type 'character :fill-pointer 0 :adjustable t))
@@ -70,9 +71,9 @@
          (pushx ">" output-stack)
          (rtl:dovec (child (generate-flat-list (children node)))
            (pushx child output-stack))
-         (pushx (format nil "</~A>" (name node)) output-stack))
-        (t
-         (pushx node output-stack))))
+         (unless (member (name node) *void-tags* :test #'string-equal)
+           (pushx (format nil "</~A>" (name node)) output-stack)))
+        (t (pushx node output-stack))))
     output-stack))
 
 (defmethod executable-rendering-sexp ((e executable) (stream-var symbol))
