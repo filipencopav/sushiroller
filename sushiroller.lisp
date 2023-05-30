@@ -24,6 +24,7 @@
       (#\quotation_mark (read stream))
       (#\@ (read-char stream nil) (read-executable stream))
       (#\left_parenthesis (read-char stream nil) (read-list stream))
+      (#\; (read-line stream) (read-next-sexp stream))
       (otherwise (error (format nil "Unexpected `~C'" character-mark))))))
 
 (defun read-identifier (stream)
